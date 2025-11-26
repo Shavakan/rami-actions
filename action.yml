@@ -1,0 +1,43 @@
+name: 'Rami Code Review'
+description: 'AI-powered code review using the Rami API'
+author: 'Shavakan'
+
+branding:
+  icon: 'code'
+  color: 'purple'
+
+inputs:
+  api_endpoint:
+    description: 'Rami API endpoint URL'
+    required: true
+  openrouter_api_key:
+    description: 'OpenRouter API key (enterprise BYOK)'
+    required: false
+
+outputs:
+  issues_found:
+    description: 'Number of issues found'
+    value: ${{ steps.review.outputs.issues_found }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Review PR
+      id: review
+      shell: bash
+      run: |
+        PAYLOAD='{"pr_url":"${{ github.event.pull_request.html_url }}","github_token":"${{ github.token }}","post_comments":true}'
+        # Add optional enterprise API key
+        if [ -n "${{ inputs.openrouter_api_key }}" ]; then
+          PAYLOAD=$(echo "$PAYLOAD" | jq --arg key "${{ inputs.openrouter_api_key }}" '. + {api_key: $key}')
+        fi
+        RESPONSE=$(curl -sf -X POST \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          "${{ inputs.api_endpoint }}/api/review") || {
+          echo "::error::Rami API request failed"
+          exit 1
+        }
+        ISSUES=$(echo "$RESPONSE" | jq '.issues | length')
+        echo "issues_found=$ISSUES" >> $GITHUB_OUTPUT
+        echo "::notice::Review complete - $ISSUES issue(s) found"
