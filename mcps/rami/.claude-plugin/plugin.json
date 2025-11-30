@@ -1,0 +1,11 @@
+{
+  "name": "mcp-rami",
+  "version": "1.0.0",
+  "description": "AI-powered code review for GitHub pull requests",
+  "author": {
+    "name": "shavakan",
+    "email": "cs.changwon.lee@gmail.com"
+  },
+  "license": "MIT",
+  "mcpServers": "./.mcp.json"
+}
