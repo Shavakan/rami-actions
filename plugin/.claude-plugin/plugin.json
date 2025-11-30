@@ -1,6 +1,6 @@
 {
   "name": "rami-code-review",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-powered code review tool for vibe coding",
   "author": {
     "name": "shavakan",
@@ -9,6 +9,6 @@
   "license": "MIT",
   "mcpServers": "./.mcp.json",
   "commands": [
-    "./commands/rami/rami.md"
+    "./commands/rami.md"
   ]
 }

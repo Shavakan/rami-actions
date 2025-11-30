@@ -51,12 +51,12 @@ This repository also serves as a Claude Code marketplace plugin.
 /plugin install rami-code-review@rami
 ```
 
-### /rami Command
+### /rami-code-review:rami Command
 
 Run a full code review cycle on your current PR branch:
 
 ```
-/rami
+/rami-code-review:rami
 ```
 
 This will:
