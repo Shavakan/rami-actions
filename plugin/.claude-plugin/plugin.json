@@ -1,0 +1,14 @@
+{
+  "name": "rami-code-review",
+  "version": "1.0.0",
+  "description": "AI-powered code review tool for vibe coding",
+  "author": {
+    "name": "shavakan",
+    "email": "cs.changwon.lee@gmail.com"
+  },
+  "license": "MIT",
+  "mcpServers": "./.mcp.json",
+  "commands": [
+    "./commands/rami/rami.md"
+  ]
+}

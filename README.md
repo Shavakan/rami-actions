@@ -48,16 +48,8 @@ This repository also serves as a Claude Code marketplace plugin.
 
 ```bash
 /plugin marketplace add Shavakan/rami-actions
-/plugin install mcp-rami@shavakan
-/plugin install rami-commands@shavakan
+/plugin install rami-code-review@rami
 ```
-
-### Components
-
-| Plugin | Type | Description |
-|--------|------|-------------|
-| `mcp-rami` | MCP Server | AI code review tools |
-| `rami-commands` | Commands | `/rami` slash command |
 
 ### /rami Command
 
