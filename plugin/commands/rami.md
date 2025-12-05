@@ -16,8 +16,17 @@ $ARGUMENTS
 
 ### Phase 1: Find PR
 
+**If PR URL provided in arguments:** Skip to Phase 2.
+
+**Otherwise:** Get git info locally and find PR:
+```bash
+git remote get-url origin
+git branch --show-current
 ```
-get_current_branch_pr()
+
+Then call:
+```
+get_current_branch_pr(remote_url, branch)
 ```
 
 | Result | Action |
@@ -97,7 +106,7 @@ Summarize:
 
 | Tool | Purpose |
 |------|---------|
-| `get_current_branch_pr()` | Find PR URL from git branch |
+| `get_current_branch_pr(remote_url, branch)` | Find PR URL from git remote and branch |
 | `get_review_results(pr_url)` | Trigger/retrieve code review |
 | `get_fix_prompt(pr_url, issue_index)` | Get detailed fix instructions |
 | `rebutt(pr_url, issue_index, author_reply)` | Challenge a finding |
