@@ -6,7 +6,7 @@ description: Run full AI code review cycle on current PR branch
 
 Automated code review cycle: find PR, get issues, fix or rebutt, repeat until clean.
 
-**IMPORTANT:** All Rami operations MUST use the `mcp__rami__*` MCP tools. Do NOT use gh CLI or direct API calls for review operations.
+**IMPORTANT:** All Rami operations MUST use the Rami MCP tools. Do NOT use gh CLI or direct API calls for review operations.
 
 ## Additional Instructions
 
@@ -28,7 +28,7 @@ git branch --show-current
 
 Then call the MCP tool:
 ```
-mcp__rami__get_current_branch_pr(remote_url, branch)
+mcp__plugin_rami-code-review_rami__get_current_branch_pr(remote_url, branch)
 ```
 
 | Result | Action |
@@ -40,7 +40,7 @@ mcp__rami__get_current_branch_pr(remote_url, branch)
 ### Phase 2: Get Review
 
 ```
-mcp__rami__get_review_results(pr_url)
+mcp__plugin_rami-code-review_rami__get_review_results(pr_url)
 ```
 
 This is a blocking call. Wait for completion.
@@ -58,7 +58,7 @@ For each issue:
 
 1. Get fix instructions:
    ```
-   mcp__rami__get_fix_prompt(pr_url, issue_index)
+   mcp__plugin_rami-code-review_rami__get_fix_prompt(pr_url, issue_index)
    ```
 
 2. Implement the fix in code
@@ -72,7 +72,7 @@ For each issue:
 
 4. If issue is a false positive, rebutt using the MCP tool:
    ```
-   mcp__rami__rebutt(pr_url, issue_index, author_reply="<specific evidence>")
+   mcp__plugin_rami-code-review_rami__rebutt(pr_url, issue_index, author_reply="<specific evidence>")
    ```
    - `verdict: valid` → Issue dismissed, continue to next issue
    - `verdict: invalid` → Must fix the issue
@@ -106,21 +106,21 @@ Summarize:
 
 ## MCP Tool Reference
 
-All tools are accessed via the `mcp__rami__` prefix:
+All tools are accessed via the `mcp__plugin_rami-code-review_rami__` prefix:
 
 | MCP Tool | Parameters | Purpose |
 |----------|------------|---------|
-| `mcp__rami__get_current_branch_pr` | `remote_url`, `branch` | Find PR URL from git remote and branch |
-| `mcp__rami__get_review_results` | `pr_url` | Trigger/retrieve code review (blocking) |
-| `mcp__rami__get_fix_prompt` | `pr_url`, `issue_index` | Get detailed fix instructions |
-| `mcp__rami__rebutt` | `pr_url`, `issue_index`, `author_reply` | Challenge a finding with evidence |
-| `mcp__rami__login` | `base_url` (optional) | Authenticate via GitHub device flow |
+| `mcp__plugin_rami-code-review_rami__get_current_branch_pr` | `remote_url`, `branch` | Find PR URL from git remote and branch |
+| `mcp__plugin_rami-code-review_rami__get_review_results` | `pr_url` | Trigger/retrieve code review (blocking) |
+| `mcp__plugin_rami-code-review_rami__get_fix_prompt` | `pr_url`, `issue_index` | Get detailed fix instructions |
+| `mcp__plugin_rami-code-review_rami__rebutt` | `pr_url`, `issue_index`, `author_reply` | Challenge a finding with evidence |
+| `mcp__plugin_rami-code-review_rami__login` | `base_url` (optional) | Authenticate via GitHub device flow |
 
 ---
 
 ## When to Rebutt
 
-Use `mcp__rami__rebutt` only with concrete evidence:
+Use `mcp__plugin_rami-code-review_rami__rebutt` only with concrete evidence:
 - False positive (code is actually safe)
 - Framework guarantees handle the concern
 - Intentional design decision with clear justification
