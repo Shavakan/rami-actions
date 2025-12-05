@@ -6,6 +6,8 @@ description: Run full AI code review cycle on current PR branch
 
 Automated code review cycle: find PR, get issues, fix or rebutt, repeat until clean.
 
+**IMPORTANT:** All Rami operations MUST use the `mcp__rami__*` MCP tools. Do NOT use gh CLI or direct API calls for review operations.
+
 ## Additional Instructions
 
 $ARGUMENTS
@@ -24,21 +26,21 @@ git remote get-url origin
 git branch --show-current
 ```
 
-Then call:
+Then call the MCP tool:
 ```
-get_current_branch_pr(remote_url, branch)
+mcp__rami__get_current_branch_pr(remote_url, branch)
 ```
 
 | Result | Action |
 |--------|--------|
-| `status: found` | Continue to Phase 2 |
+| `status: success` | Continue to Phase 2 with `pr_url` |
 | `status: not_found` | Stop. Tell user: "No PR found. Push branch and create PR first." |
 | `status: error` | Stop. Report error. |
 
 ### Phase 2: Get Review
 
 ```
-get_review_results(pr_url)
+mcp__rami__get_review_results(pr_url)
 ```
 
 This is a blocking call. Wait for completion.
@@ -56,7 +58,7 @@ For each issue:
 
 1. Get fix instructions:
    ```
-   get_fix_prompt(pr_url, issue_index)
+   mcp__rami__get_fix_prompt(pr_url, issue_index)
    ```
 
 2. Implement the fix in code
@@ -68,12 +70,12 @@ For each issue:
    # or: go test ./... && golangci-lint run
    ```
 
-4. If user disagrees with a finding, rebutt with evidence:
+4. If issue is a false positive, rebutt using the MCP tool:
    ```
-   rebutt(pr_url, issue_index, author_reply="<specific evidence>")
+   mcp__rami__rebutt(pr_url, issue_index, author_reply="<specific evidence>")
    ```
-   - `verdict: valid` → Issue dismissed, continue
-   - `verdict: invalid` → Must fix
+   - `verdict: valid` → Issue dismissed, continue to next issue
+   - `verdict: invalid` → Must fix the issue
    - `verdict: partial` → Fix the valid part
 
 After all issues addressed:
@@ -97,28 +99,32 @@ Return to Phase 2. Repeat until:
 Summarize:
 - Total iterations
 - Issues fixed
-- Issues rebutted
+- Issues rebutted (with verdicts)
 - Final status
 
 ---
 
-## Tool Reference
+## MCP Tool Reference
 
-| Tool | Purpose |
-|------|---------|
-| `get_current_branch_pr(remote_url, branch)` | Find PR URL from git remote and branch |
-| `get_review_results(pr_url)` | Trigger/retrieve code review |
-| `get_fix_prompt(pr_url, issue_index)` | Get detailed fix instructions |
-| `rebutt(pr_url, issue_index, author_reply)` | Challenge a finding |
+All tools are accessed via the `mcp__rami__` prefix:
+
+| MCP Tool | Parameters | Purpose |
+|----------|------------|---------|
+| `mcp__rami__get_current_branch_pr` | `remote_url`, `branch` | Find PR URL from git remote and branch |
+| `mcp__rami__get_review_results` | `pr_url` | Trigger/retrieve code review (blocking) |
+| `mcp__rami__get_fix_prompt` | `pr_url`, `issue_index` | Get detailed fix instructions |
+| `mcp__rami__rebutt` | `pr_url`, `issue_index`, `author_reply` | Challenge a finding with evidence |
+| `mcp__rami__login` | `base_url` (optional) | Authenticate via GitHub device flow |
 
 ---
 
 ## When to Rebutt
 
-Use rebuttal only with concrete evidence:
+Use `mcp__rami__rebutt` only with concrete evidence:
 - False positive (code is actually safe)
 - Framework guarantees handle the concern
-- Intentional trade-off with documentation
+- Intentional design decision with clear justification
+- Duplicate of another issue
 
 Do NOT rebutt:
 - To avoid work
