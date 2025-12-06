@@ -4,129 +4,73 @@ description: Run full AI code review cycle on current PR branch
 
 # Rami Code Review
 
-Automated code review cycle: find PR, get issues, fix or rebutt, repeat until clean.
+Fix or rebutt all review issues until clean. Max 5 iterations.
 
-**IMPORTANT:** All Rami operations MUST use the Rami MCP tools. Do NOT use gh CLI or direct API calls for review operations.
+## Constraints
 
-## Additional Instructions
+- Use Rami MCP tools for all review operations (get issues, get fix prompts, rebutt)
+- Use `gh` CLI only for PR metadata (branch name lookup)
+- Rebutt only with concrete evidence (false positive, framework guarantees, intentional design, duplicate)
+- Never rebutt to avoid work or for style preferences
+
+## Arguments
 
 $ARGUMENTS
 
 ---
 
-## Execution
+## Phase 1: Setup
 
-### Phase 1: Find PR
-
-**If PR URL provided in arguments:** Skip to Phase 2.
-
-**Otherwise:** Get git info locally and find PR:
+**With PR URL argument:**
 ```bash
-git remote get-url origin
-git branch --show-current
+BRANCH=$(gh pr view <PR_URL> --json headRefName -q '.headRefName')
+git fetch origin "$BRANCH" && git checkout "$BRANCH" && git pull origin "$BRANCH"
 ```
 
-Then call the MCP tool:
+**Without PR URL:**
+```bash
+REMOTE=$(git remote get-url origin)
+BRANCH=$(git branch --show-current)
 ```
-mcp__plugin_rami-code-review_rami__get_current_branch_pr(remote_url, branch)
-```
+Then: `mcp__plugin_rami-code-review_rami__get_current_branch_pr(remote_url=$REMOTE, branch=$BRANCH)`
 
 | Result | Action |
 |--------|--------|
-| `status: success` | Continue to Phase 2 with `pr_url` |
-| `status: not_found` | Stop. Tell user: "No PR found. Push branch and create PR first." |
-| `status: error` | Stop. Report error. |
+| `status: success` | Use returned `pr_url` |
+| `status: not_found` | Stop: "No PR found. Push branch and create PR first." |
+| `status: error` | Stop: Report error |
 
-### Phase 2: Get Review
+---
+
+## Phase 2: Review Loop
 
 ```
 mcp__plugin_rami-code-review_rami__get_review_results(pr_url)
 ```
 
-This is a blocking call. Wait for completion.
+Exit if `issue_count == 0`.
 
-| Result | Action |
-|--------|--------|
-| `issue_count == 0` | Done. Report: "No issues found." |
-| `issue_count > 0` | Continue to Phase 3 |
+### For each issue (Blocking → High → Medium → Low):
 
-### Phase 3: Fix Issues
-
-Process issues in priority order: **Blocking → High → Medium → Low**
-
-For each issue:
-
-1. Get fix instructions:
+1. `mcp__plugin_rami-code-review_rami__get_fix_prompt(pr_url, issue_index)` → Get instructions
+2. Implement fix OR rebutt with evidence:
    ```
-   mcp__plugin_rami-code-review_rami__get_fix_prompt(pr_url, issue_index)
+   mcp__plugin_rami-code-review_rami__rebutt(pr_url, issue_index, author_reply="<evidence>")
    ```
+   - `verdict: valid` → Dismissed
+   - `verdict: invalid` → Must fix
+   - `verdict: partial` → Fix valid part
+3. Run tests if project has them (check for Makefile, package.json, go.mod)
 
-2. Implement the fix in code
-
-3. Run project tests and lint (if available):
-   ```bash
-   make test && make lint
-   # or: npm test && npm run lint
-   # or: go test ./... && golangci-lint run
-   ```
-
-4. If issue is a false positive, rebutt using the MCP tool:
-   ```
-   mcp__plugin_rami-code-review_rami__rebutt(pr_url, issue_index, author_reply="<specific evidence>")
-   ```
-   - `verdict: valid` → Issue dismissed, continue to next issue
-   - `verdict: invalid` → Must fix the issue
-   - `verdict: partial` → Fix the valid part
-
-After all issues addressed:
-
+### After all issues:
 ```bash
-git add -A
-git commit -m "fix: address rami review feedback"
-git push
+git add -A && git commit -m "fix: address rami review feedback" && git push
 ```
 
-### Phase 4: Re-check
-
-Return to Phase 2. Repeat until:
-
-- `issue_count == 0` (clean review)
-- Max 5 iterations reached (prevent infinite loops)
-- User interrupts
-
-### Phase 5: Report
-
-Summarize:
-- Total iterations
-- Issues fixed
-- Issues rebutted (with verdicts)
-- Final status
+Repeat Phase 2. Stop at 5 iterations or clean review.
 
 ---
 
-## MCP Tool Reference
+## Phase 3: Report
 
-All tools are accessed via the `mcp__plugin_rami-code-review_rami__` prefix:
-
-| MCP Tool | Parameters | Purpose |
-|----------|------------|---------|
-| `mcp__plugin_rami-code-review_rami__get_current_branch_pr` | `remote_url`, `branch` | Find PR URL from git remote and branch |
-| `mcp__plugin_rami-code-review_rami__get_review_results` | `pr_url` | Trigger/retrieve code review (blocking) |
-| `mcp__plugin_rami-code-review_rami__get_fix_prompt` | `pr_url`, `issue_index` | Get detailed fix instructions |
-| `mcp__plugin_rami-code-review_rami__rebutt` | `pr_url`, `issue_index`, `author_reply` | Challenge a finding with evidence |
-| `mcp__plugin_rami-code-review_rami__login` | `base_url` (optional) | Authenticate via GitHub device flow |
-
----
-
-## When to Rebutt
-
-Use `mcp__plugin_rami-code-review_rami__rebutt` only with concrete evidence:
-- False positive (code is actually safe)
-- Framework guarantees handle the concern
-- Intentional design decision with clear justification
-- Duplicate of another issue
-
-Do NOT rebutt:
-- To avoid work
-- Style preferences (just fix them)
-- When unsure
+Summarize: iterations, issues fixed, rebuttals (with verdicts), final status.
