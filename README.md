@@ -70,7 +70,35 @@ This will:
 
 | Tool | Description |
 |------|-------------|
+| `login` | Authenticate via GitHub device flow (required on first use) |
 | `get_current_branch_pr` | Find PR URL from current git branch |
-| `get_review_results` | Trigger or retrieve code review |
+| `get_review_results` | Trigger or retrieve code review (triggers new review if none exists) |
+| `get_review_status` | Check review status without triggering new review |
 | `get_fix_prompt` | Get detailed fix instructions |
 | `rebutt` | Challenge a finding with evidence |
+| `invalidate_cache` | Clear cached review results (enterprise tier only) |
+
+### Authentication
+
+On first use, run the `login` tool. It initiates GitHub device flow:
+
+1. You'll receive a `user_code` and `verification_uri`
+2. Visit the URL and enter the code
+3. Authorize the Rami app
+4. The tool completes and returns a session token
+
+Session tokens are cached automatically. Re-authentication is only needed when tokens expire.
+
+### Troubleshooting
+
+**"Not authenticated" errors**
+- Run `/rami` - it handles auth automatically in Phase 0
+
+**"No PR found for branch"**
+- Push your branch and create a PR first
+
+**Review stuck in "queued" state**
+- LLM is processing. Retry after `retry_after_seconds` from the response
+
+**"Rate limited by GitHub"**
+- Consider using a GitHub App instead of PAT for higher limits

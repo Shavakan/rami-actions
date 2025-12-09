@@ -19,6 +19,18 @@ $ARGUMENTS
 
 ---
 
+## Phase 0: Authentication
+
+Before starting, verify authentication status by calling any Rami tool.
+
+If you receive an authentication error (401, "not authenticated", or similar):
+1. Run `mcp__plugin_rami-code-review_rami__login()`
+2. Display the `user_code` and `verification_uri` to the user
+3. Wait for login to complete (tool blocks until done)
+4. Continue to Phase 1
+
+---
+
 ## Phase 1: Setup
 
 **With PR URL argument:**
